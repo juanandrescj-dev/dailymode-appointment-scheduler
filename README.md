@@ -50,9 +50,12 @@ dailymode-appointment-scheduler/
 ## 🧠📂 Backend Folder Structure
 
 src/
-├── application/            # Capa de Aplicación
-│   └── features/           # Organizada por funcionalidades (Vertical Slices)
+├── application/            # Application Layer
+
+│   └── features/           # Organized by functionalities (Vertical Slices)
+
 │       └── appointments/
+
 │           ├── commands/
 │           │   └── create-appointment/
 │           │       ├── create-appointment.command.ts
