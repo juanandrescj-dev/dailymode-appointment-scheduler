@@ -32,4 +32,3 @@ The necessary facilities are the following:
 Sigue estos pasos para configurar y ejecutar el backend en tu entorno local.
 
 ### 1. Inicializar el Proyecto Node.js
-
