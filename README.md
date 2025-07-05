@@ -51,11 +51,8 @@ dailymode-appointment-scheduler/
 
 src/
 ├── application/            # Application Layer
-
 │   └── features/           # Organized by functionalities (Vertical Slices)
-
 │       └── appointments/
-
 │           ├── commands/
 │           │   └── create-appointment/
 │           │       ├── create-appointment.command.ts
@@ -66,7 +63,7 @@ src/
 │                   ├── get-appointment-by-id.query.ts
 │                   └── get-appointment-by-id.resolver.ts
 │
-├── core/                   # Dominio e infraestructura compartida
+├── core/                   # Domain and shared infrastructure
 │   ├── domain/
 │   │   ├── entities/
 │   │   │   ├── appointment.entity.ts
@@ -77,7 +74,7 @@ src/
 │       └── security/
 │           └── auth.guard.ts
 │
-├── infrastructure/         # Infraestructura global (conexión a BD, servidor)
+├── infrastructure/         # Global infrastructure (connection to database, server)
 │   ├── persistence/
 │   │   └── typeorm/
 │   │       ├── implementation/
@@ -88,4 +85,4 @@ src/
 │       │   └── schema.ts
 │       └── server.ts
 │
-└── main.ts                 # Punto de entrada de la aplicación
+└── main.ts                 # Application entry point
