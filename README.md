@@ -50,8 +50,8 @@ dailymode-appointment-scheduler/
 ## 🧠📂 Backend Folder Structure
 
 src/
-├── application/         # Capa de Aplicación
-│   └── features/        # Organizada por funcionalidades (Vertical Slices)
+├── application/            # Capa de Aplicación
+│   └── features/           # Organizada por funcionalidades (Vertical Slices)
 │       └── appointments/
 │           ├── commands/
 │           │   └── create-appointment/
@@ -63,7 +63,7 @@ src/
 │                   ├── get-appointment-by-id.query.ts
 │                   └── get-appointment-by-id.resolver.ts
 │
-├── core/         # Dominio e infraestructura compartida
+├── core/                   # Dominio e infraestructura compartida
 │   ├── domain/
 │   │   ├── entities/
 │   │   │   ├── appointment.entity.ts
@@ -74,7 +74,7 @@ src/
 │       └── security/
 │           └── auth.guard.ts
 │
-├── infrastructure/      # Infraestructura global (conexión a BD, servidor)
+├── infrastructure/         # Infraestructura global (conexión a BD, servidor)
 │   ├── persistence/
 │   │   └── typeorm/
 │   │       ├── implementation/
@@ -85,4 +85,4 @@ src/
 │       │   └── schema.ts
 │       └── server.ts
 │
-└── main.ts       # Punto de entrada de la aplicación
+└── main.ts                 # Punto de entrada de la aplicación
