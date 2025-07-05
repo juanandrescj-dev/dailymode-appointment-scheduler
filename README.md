@@ -35,7 +35,7 @@ it is advisable to have a separate Domain and Infrastructure for each Feature.
 | Layer | Stack |
 |-------|-------|
 | Frontend | React, Vite, TypeScript, Tailwind CSS, Apollo Client |
-| Backend | Node.js, GraphQL, TypeORM, PostgreSQL |
+| Backend | Node.js, GraphQL, TypeORM, PostgreSQL, Apollo Server |
 | Tools | Git, VS Code, ESLint, Prettier, Husky, Vercel/Render |
 
 ---
