@@ -6,6 +6,12 @@
 
 ---
 
+## 🏛️ Architecture to use
+**Clean Architecture - Domain Driven Design (DDD).**
+**Order:** As this is a medium- to small-sized web application, we will use a global Domain and Infrastructure, 
+while the application layer will be separated by Features (Vertical Slice). For very large applications, 
+it is advisable to have a separate Domain and Infrastructure for each Feature.
+
 ## 📸 Screenshots
 
 > Images of the results of the development process. In progress....
@@ -40,3 +46,43 @@ dailymode-appointment-scheduler/
 ├── frontend/ # React App
 ├── backend/ # Node + GraphQL API
 └── README.md
+
+## 🧠📂 Backend Folder Structure
+
+src/
+├── application/         # Capa de Aplicación
+│   └── features/        # Organizada por funcionalidades (Vertical Slices)
+│       └── appointments/
+│           ├── commands/
+│           │   └── create-appointment/
+│           │       ├── create-appointment.command.ts
+│           │       ├── create-appointment.dto.ts
+│           │       └── create-appointment.resolver.ts
+│           └── queries/
+│               └── get-appointment-by-id/
+│                   ├── get-appointment-by-id.query.ts
+│                   └── get-appointment-by-id.resolver.ts
+│
+├── core/         # Dominio e infraestructura compartida
+│   ├── domain/
+│   │   ├── entities/
+│   │   │   ├── appointment.entity.ts
+│   │   │   └── user.entity.ts
+│   │   └── repositories/
+│   │       └── IUserRepository.ts
+│   └── infrastructure/
+│       └── security/
+│           └── auth.guard.ts
+│
+├── infrastructure/      # Infraestructura global (conexión a BD, servidor)
+│   ├── persistence/
+│   │   └── typeorm/
+│   │       ├── implementation/
+│   │       ├── models/
+│   │       └── data-source.ts
+│   └── http/
+│       ├── graphql/
+│       │   └── schema.ts
+│       └── server.ts
+│
+└── main.ts       # Punto de entrada de la aplicación
