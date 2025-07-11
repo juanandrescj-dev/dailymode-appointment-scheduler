@@ -13,28 +13,47 @@ CREATE TABLE countries (
     country_id UUID PRIMARY KEY,
     country_name VARCHAR(100) NOT NULL,
 	status_id INT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ NULL,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE countries ADD CONSTRAINT fk_countries_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
 ALTER TABLE countries ADD CONSTRAINT fk_countries_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
 -- TABLE: countries
--- Defines the countries to which users, provinces, and businesses belong.
+-- Defines the provinces which in turn are related to the cities or municipalities
 CREATE TABLE provinces (
     province_id UUID PRIMARY KEY,
     province_name VARCHAR(100) NOT NULL,
 	status_id INT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    country_id UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ NULL,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
+ALTER TABLE provinces ADD CONSTRAINT fk_provinces_countries_countryid FOREIGN KEY (country_id) REFERENCES countries(country_id);
 ALTER TABLE provinces ADD CONSTRAINT fk_provinces_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
 ALTER TABLE provinces ADD CONSTRAINT fk_provinces_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
+
+
+-- TABLE: cities
+-- It represents the cities to which businesses and users belong. The city provides information about the province and country.
+CREATE TABLE cities (
+    city_id UUID PRIMARY KEY,
+    city_name VARCHAR(100) NOT NULL,
+	status_id INT NOT NULL,
+    province_id UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
+);
+ALTER TABLE cities ADD CONSTRAINT fk_cities_provinces_province_id FOREIGN KEY (province_id) REFERENCES provinces(province_id);
+ALTER TABLE cities ADD CONSTRAINT fk_cities_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE cities ADD CONSTRAINT fk_cities_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
 -- TABLE: users
@@ -44,19 +63,19 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     id_card VARCHAR(50) UNIQUE NOT NULL,
-    country VARCHAR(100),
-    province VARCHAR(100),
+    city_id UUID NOT NULL,
     address TEXT,
     phone VARCHAR(50),
     email VARCHAR(255) UNIQUE NOT NULL,
     user_name VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL, -- A hash of the password must be stored
     status_id INT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ NULL,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
+ALTER TABLE users ADD CONSTRAINT fk_users_cities_city_id FOREIGN KEY (city_id) REFERENCES cities(city_id);
 ALTER TABLE users ADD CONSTRAINT fk_users_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
 ALTER TABLE users ADD CONSTRAINT fk_users_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
@@ -66,14 +85,15 @@ ALTER TABLE users ADD CONSTRAINT fk_users_users_modifiedby FOREIGN KEY (modified
 CREATE TABLE statuses (
     status_id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    description TEXT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    description TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ NULL,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE countries ADD CONSTRAINT fk_countries_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
 ALTER TABLE provinces ADD CONSTRAINT fk_provinces_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
+ALTER TABLE cities ADD CONSTRAINT fk_cities_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
 ALTER TABLE users ADD CONSTRAINT fk_users_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
 ALTER TABLE statuses ADD CONSTRAINT fk_statuses_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
 ALTER TABLE statuses ADD CONSTRAINT fk_statuses_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
@@ -86,10 +106,10 @@ CREATE TABLE roles (
     role_name VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
 	status_id INT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ NULL,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE users ADD CONSTRAINT fk_roles_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
 ALTER TABLE roles ADD CONSTRAINT fk_roles_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
@@ -107,12 +127,14 @@ CREATE TABLE businesses (
     address TEXT,
     phone VARCHAR(50),
     email VARCHAR(255),
+    city_id UUID NOT NULL,
     status_id INT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ NULL,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
+ALTER TABLE businesses ADD CONSTRAINT fk_businesses_cities_city_id FOREIGN KEY (city_id) REFERENCES cities(city_id);
 ALTER TABLE businesses ADD CONSTRAINT fk_businesses_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
 ALTER TABLE businesses ADD CONSTRAINT fk_businesses_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
 ALTER TABLE businesses ADD CONSTRAINT fk_businesses_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
@@ -120,21 +142,23 @@ ALTER TABLE businesses ADD CONSTRAINT fk_businesses_users_modifiedby FOREIGN KEY
 
 -- TABLE: users_roles_businesses 
 -- Stores and defines the roles that each user has in a business.
-CREATE TABLE users_roles (
-    user_role_id UUID PRIMARY KEY,
+CREATE TABLE users_roles_businesses (
+    user_role_busines_id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
     role_id UUID NOT NULL,
+    business_id UUID NOT NULL,
     status_id INT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
-ALTER TABLE users_roles ADD CONSTRAINT fk_usersroles_users_userid FOREIGN KEY (user_id) REFERENCES users(user_id);
-ALTER TABLE users_roles ADD CONSTRAINT fk_usersroles_roles_roleid FOREIGN KEY (role_id) REFERENCES roles(role_id);
-ALTER TABLE users_roles ADD CONSTRAINT fk_usersroles_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
-ALTER TABLE users_roles ADD CONSTRAINT fk_usersroles_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
-ALTER TABLE users_roles ADD CONSTRAINT fk_usersroles_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
+ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_users_userid FOREIGN KEY (user_id) REFERENCES users(user_id);
+ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_roles_roleid FOREIGN KEY (role_id) REFERENCES roles(role_id);
+ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_roles_business_id FOREIGN KEY (business_id) REFERENCES businesses(business_id);
+ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
+ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
 -- TABLE: services
@@ -146,10 +170,10 @@ CREATE TABLE services (
     duration_in_hours NUMERIC(5, 2) NOT NULL,
     business_id UUID NOT NULL,
     status_id INT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE services ADD CONSTRAINT fk_services_businesses_businessid FOREIGN KEY (business_id) REFERENCES businesses(business_id);
 ALTER TABLE services ADD CONSTRAINT fk_services_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
@@ -168,10 +192,10 @@ CREATE TABLE appointments (
     client_notes TEXT,
     internal_notes TEXT,
     status_id INT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE appointments ADD CONSTRAINT fk_appointments_businesses_businessid FOREIGN KEY (business_id) REFERENCES businesses(business_id);
 ALTER TABLE appointments ADD CONSTRAINT fk_appointments_users_clientid FOREIGN KEY (client_id) REFERENCES users(user_id);
@@ -187,10 +211,10 @@ CREATE TABLE appointments_services (
     appointment_id BIGINT NOT NULL,
     service_id INT NOT NULL,
     status_id INT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE appointments_services ADD CONSTRAINT fk_appointmentsservices_appointments_appointmentid FOREIGN KEY (appointment_id) REFERENCES appointments(appointment_id);
 ALTER TABLE appointments_services ADD CONSTRAINT fk_appointmentsservices_services_serviceid FOREIGN KEY (service_id) REFERENCES services(service_id);
@@ -208,10 +232,10 @@ CREATE TABLE blocking_reasons (
     start_datetime TIMESTAMPTZ,
     end_datetime TIMESTAMPTZ,
     status_id INT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE blocking_reasons ADD CONSTRAINT fk_blockingreasons_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
 ALTER TABLE blocking_reasons ADD CONSTRAINT fk_blockingreasons_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
@@ -229,10 +253,10 @@ CREATE TABLE availability (
     validity_start_date DATE NOT NULL,
     validity_end_date DATE,
     status_id INT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE availability ADD CONSTRAINT fk_availability_users_userid FOREIGN KEY (user_id) REFERENCES users(user_id);
 ALTER TABLE availability ADD CONSTRAINT fk_availability_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
@@ -240,7 +264,7 @@ ALTER TABLE availability ADD CONSTRAINT fk_availability_users_createdby FOREIGN 
 ALTER TABLE availability ADD CONSTRAINT fk_availability_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
--- TABLA: availability_blocks
+-- TABLE: availability_blocks
 -- Specific blocks on a user's availability.
 CREATE TABLE availability_blocks (
     availability_block_id UUID PRIMARY KEY,
@@ -249,10 +273,10 @@ CREATE TABLE availability_blocks (
     end_time TIMESTAMPTZ NOT NULL,
     blocking_reason_id INT,
     status_id INT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT,
-    modified_by BIGINT
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
 );
 ALTER TABLE availability_blocks ADD CONSTRAINT fk_availabilityblocks_users_userid FOREIGN KEY (user_id) REFERENCES users(user_id);
 ALTER TABLE availability_blocks ADD CONSTRAINT fk_availabilityblocks_blockingreasons_blockingreasonid FOREIGN KEY (blocking_reason_id) REFERENCES blocking_reasons(blocking_reason_id);
