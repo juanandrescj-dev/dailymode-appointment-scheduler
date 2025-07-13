@@ -1,0 +1,1 @@
+CREATE DATABASE appointment_scheduler_db;
