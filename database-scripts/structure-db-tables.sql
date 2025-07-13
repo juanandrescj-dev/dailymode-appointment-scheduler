@@ -18,11 +18,9 @@ CREATE TABLE countries (
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
-ALTER TABLE countries ADD CONSTRAINT fk_countries_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
-ALTER TABLE countries ADD CONSTRAINT fk_countries_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
--- TABLE: countries
+-- TABLE: provinces
 -- Defines the provinces which in turn are related to the cities or municipalities
 CREATE TABLE provinces (
     province_id UUID PRIMARY KEY,
@@ -35,8 +33,6 @@ CREATE TABLE provinces (
     modified_by UUID NULL
 );
 ALTER TABLE provinces ADD CONSTRAINT fk_provinces_countries_countryid FOREIGN KEY (country_id) REFERENCES countries(country_id);
-ALTER TABLE provinces ADD CONSTRAINT fk_provinces_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
-ALTER TABLE provinces ADD CONSTRAINT fk_provinces_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
 -- TABLE: cities
@@ -52,8 +48,6 @@ CREATE TABLE cities (
     modified_by UUID NULL
 );
 ALTER TABLE cities ADD CONSTRAINT fk_cities_provinces_province_id FOREIGN KEY (province_id) REFERENCES provinces(province_id);
-ALTER TABLE cities ADD CONSTRAINT fk_cities_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
-ALTER TABLE cities ADD CONSTRAINT fk_cities_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
 -- TABLE: users
@@ -62,10 +56,10 @@ CREATE TABLE users (
     user_id UUID PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    id_card VARCHAR(50) UNIQUE NOT NULL,
+    identity_document VARCHAR(50) UNIQUE NOT NULL,
     city_id UUID NOT NULL,
-    address TEXT,
-    phone VARCHAR(50),
+    address TEXT NOT NULL,
+    phone VARCHAR(50) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     user_name VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL, -- A hash of the password must be stored
@@ -75,6 +69,12 @@ CREATE TABLE users (
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
+ALTER TABLE countries ADD CONSTRAINT fk_countries_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE countries ADD CONSTRAINT fk_countries_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
+ALTER TABLE provinces ADD CONSTRAINT fk_provinces_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE provinces ADD CONSTRAINT fk_provinces_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
+ALTER TABLE cities ADD CONSTRAINT fk_cities_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE cities ADD CONSTRAINT fk_cities_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 ALTER TABLE users ADD CONSTRAINT fk_users_cities_city_id FOREIGN KEY (city_id) REFERENCES cities(city_id);
 ALTER TABLE users ADD CONSTRAINT fk_users_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
 ALTER TABLE users ADD CONSTRAINT fk_users_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
@@ -83,7 +83,7 @@ ALTER TABLE users ADD CONSTRAINT fk_users_users_modifiedby FOREIGN KEY (modified
 -- TABLE: statuses
 -- Defines the different states that records can have (active, inactive, pending).
 CREATE TABLE statuses (
-    status_id INT PRIMARY KEY,
+    status_id INT IDENTITY PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -98,11 +98,10 @@ ALTER TABLE users ADD CONSTRAINT fk_users_statuses_statusid FOREIGN KEY (status_
 ALTER TABLE statuses ADD CONSTRAINT fk_statuses_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
 ALTER TABLE statuses ADD CONSTRAINT fk_statuses_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
-
--- TABLE: roles
--- Defines user roles in a business (e.g., Administrator, Employee).
-CREATE TABLE roles (
-    role_id UUID PRIMARY KEY,
+-- TABLE: system_roles
+-- Defines the system roles that a user can have (Standard User, System Administrator, System User).
+CREATE TABLE system_roles (
+    system_role_id UUID PRIMARY KEY,
     role_name VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
 	status_id INT NOT NULL,
@@ -111,9 +110,44 @@ CREATE TABLE roles (
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
-ALTER TABLE users ADD CONSTRAINT fk_roles_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
-ALTER TABLE roles ADD CONSTRAINT fk_roles_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
-ALTER TABLE roles ADD CONSTRAINT fk_roles_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
+ALTER TABLE system_roles ADD CONSTRAINT fk_system_roles_statuses_status_id FOREIGN KEY (status_id) REFERENCES statuses(status_id);
+ALTER TABLE system_roles ADD CONSTRAINT fk_system_roles_users_created_by FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE system_roles ADD CONSTRAINT fk_system_roles_users_modified_by FOREIGN KEY (modified_by) REFERENCES users(user_id);
+
+-- TABLE: users_roles_system 
+-- Allows you to know which roles each user has about the system.
+CREATE TABLE users_roles_system (
+    user_role_system_id INT IDENTITY PRIMARY KEY,
+    user_id UUID NOT NULL,
+    business_id UUID NOT NULL,
+    status_id INT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
+);
+ALTER TABLE users_roles_system ADD CONSTRAINT fk_users_roles_system_users_userid FOREIGN KEY (user_id) REFERENCES users(user_id);
+ALTER TABLE users_roles_system ADD CONSTRAINT fk_users_roles_system_roles_business_id FOREIGN KEY (business_id) REFERENCES businesses(business_id);
+ALTER TABLE users_roles_system ADD CONSTRAINT fk_users_roles_system_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
+ALTER TABLE users_roles_system ADD CONSTRAINT fk_users_roles_system_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE users_roles_system ADD CONSTRAINT fk_users_roles_system_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
+
+
+-- TABLE: business_roles
+-- Defines the roles that a user can have in a business (Administrator, Employee, etc.)
+CREATE TABLE business_roles (
+    business_role_id UUID PRIMARY KEY,
+    role_name VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+	status_id INT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
+    created_by UUID NOT NULL,
+    modified_by UUID NULL
+);
+ALTER TABLE business_roles ADD CONSTRAINT fk_business_roles_statuses_status_id FOREIGN KEY (status_id) REFERENCES statuses(status_id);
+ALTER TABLE business_roles ADD CONSTRAINT fk_business_roles_users_created_by FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE business_roles ADD CONSTRAINT fk_business_roles_users_modified_by FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
 -- TABLE: businesses
@@ -121,14 +155,12 @@ ALTER TABLE roles ADD CONSTRAINT fk_roles_users_modifiedby FOREIGN KEY (modified
 CREATE TABLE businesses (
     business_id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    rnc VARCHAR(50) UNIQUE,
-    country VARCHAR(100),
-    province VARCHAR(100),
-    address TEXT,
-    phone VARCHAR(50),
-    email VARCHAR(255),
+    rnc VARCHAR(50) NOT NULL UNIQUE,
+    address TEXT NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL,
     city_id UUID NOT NULL,
-    status_id INT,
+    status_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at TIMESTAMPTZ NULL,
     created_by UUID NOT NULL,
@@ -140,25 +172,25 @@ ALTER TABLE businesses ADD CONSTRAINT fk_businesses_users_createdby FOREIGN KEY 
 ALTER TABLE businesses ADD CONSTRAINT fk_businesses_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
--- TABLE: users_roles_businesses 
--- Stores and defines the roles that each user has in a business.
-CREATE TABLE users_roles_businesses (
-    user_role_busines_id UUID PRIMARY KEY,
+-- TABLE: users_roles_business 
+-- Allows you to know which business roles each user has in a business.
+CREATE TABLE users_roles_business (
+    user_role_business_id INT IDENTITY PRIMARY KEY,
     user_id UUID NOT NULL,
-    role_id UUID NOT NULL,
+    business_role_id UUID NOT NULL,
     business_id UUID NOT NULL,
-    status_id INT,
+    status_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
-ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_users_userid FOREIGN KEY (user_id) REFERENCES users(user_id);
-ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_roles_roleid FOREIGN KEY (role_id) REFERENCES roles(role_id);
-ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_roles_business_id FOREIGN KEY (business_id) REFERENCES businesses(business_id);
-ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
-ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
-ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
+ALTER TABLE users_roles_business ADD CONSTRAINT fk_users_roles_business_users_userid FOREIGN KEY (user_id) REFERENCES users(user_id);
+ALTER TABLE users_roles_business ADD CONSTRAINT fk_users_roles_business_roles_roleid FOREIGN KEY (business_role_id) REFERENCES business_roles(business_role_id);
+ALTER TABLE users_roles_business ADD CONSTRAINT fk_users_roles_business_roles_business_id FOREIGN KEY (business_id) REFERENCES businesses(business_id);
+ALTER TABLE users_roles_business ADD CONSTRAINT fk_users_roles_business_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
+ALTER TABLE users_roles_business ADD CONSTRAINT fk_users_roles_business_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
+ALTER TABLE users_roles_business ADD CONSTRAINT fk_users_roles_business_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
 
 
 -- TABLE: services
@@ -166,12 +198,12 @@ ALTER TABLE users_roles_businesses ADD CONSTRAINT fk_usersroles_businesses_users
 CREATE TABLE services (
     service_id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    description TEXT,
+    description TEXT NOT NULL,
     duration_in_hours NUMERIC(5, 2) NOT NULL,
     business_id UUID NOT NULL,
-    status_id INT,
+    status_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
@@ -185,20 +217,20 @@ ALTER TABLE services ADD CONSTRAINT fk_services_users_modifiedby FOREIGN KEY (mo
 -- Stores information about scheduled appointments.
 CREATE TABLE appointments (
     appointment_id UUID PRIMARY KEY,
-    business_id BIGINT NOT NULL,
-    client_id BIGINT NOT NULL,
+    business_id UUID NOT NULL,
+    customer_id UUID NOT NULL,
     start_datetime TIMESTAMPTZ NOT NULL,
     end_datetime TIMESTAMPTZ NOT NULL,
-    client_notes TEXT,
-    internal_notes TEXT,
-    status_id INT,
+    customer_notes TEXT NULL,
+    internal_notes TEXT NULL,
+    status_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
 ALTER TABLE appointments ADD CONSTRAINT fk_appointments_businesses_businessid FOREIGN KEY (business_id) REFERENCES businesses(business_id);
-ALTER TABLE appointments ADD CONSTRAINT fk_appointments_users_clientid FOREIGN KEY (client_id) REFERENCES users(user_id);
+ALTER TABLE appointments ADD CONSTRAINT fk_appointments_users_clientid FOREIGN KEY (customer_id) REFERENCES users(user_id);
 ALTER TABLE appointments ADD CONSTRAINT fk_appointments_statuses_statusid FOREIGN KEY (status_id) REFERENCES statuses(status_id);
 ALTER TABLE appointments ADD CONSTRAINT fk_appointments_users_createdby FOREIGN KEY (created_by) REFERENCES users(user_id);
 ALTER TABLE appointments ADD CONSTRAINT fk_appointments_users_modifiedby FOREIGN KEY (modified_by) REFERENCES users(user_id);
@@ -208,11 +240,11 @@ ALTER TABLE appointments ADD CONSTRAINT fk_appointments_users_modifiedby FOREIGN
 -- Join table to detail which services are included in an appointment.
 CREATE TABLE appointments_services (
     appointments_services_id UUID PRIMARY KEY,
-    appointment_id BIGINT NOT NULL,
-    service_id INT NOT NULL,
-    status_id INT,
+    appointment_id UUID NOT NULL,
+    service_id UUID NOT NULL,
+    status_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
@@ -226,14 +258,14 @@ ALTER TABLE appointments_services ADD CONSTRAINT fk_appointmentsservices_users_m
 -- TABLE: blocking_reasons
 -- Reasons why a (professional) user's availability slot may be blocked.
 CREATE TABLE blocking_reasons (
-    blocking_reason_id UUID PRIMARY KEY,
+    blocking_reason_id INT IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    description TEXT,
-    start_datetime TIMESTAMPTZ,
-    end_datetime TIMESTAMPTZ,
-    status_id INT,
+    description TEXT NOT NULL,
+    start_datetime TIMESTAMPTZ NOT NULL,
+    end_datetime TIMESTAMPTZ NOT NULL,
+    status_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
@@ -246,15 +278,15 @@ ALTER TABLE blocking_reasons ADD CONSTRAINT fk_blockingreasons_users_modifiedby 
 -- Defines standard staff availability schedules.
 CREATE TABLE availability (
     availability_id UUID PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_id UUID NOT NULL,
     day_of_the_week INT NOT NULL, -- ISO 8601: 1 = Monday, 7 = Sunday
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     validity_start_date DATE NOT NULL,
     validity_end_date DATE,
-    status_id INT,
+    status_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
@@ -268,13 +300,13 @@ ALTER TABLE availability ADD CONSTRAINT fk_availability_users_modifiedby FOREIGN
 -- Specific blocks on a user's availability.
 CREATE TABLE availability_blocks (
     availability_block_id UUID PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_id UUID NOT NULL,
     start_time TIMESTAMPTZ NOT NULL,
     end_time TIMESTAMPTZ NOT NULL,
     blocking_reason_id INT,
-    status_id INT,
+    status_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    modified_at TIMESTAMPTZ NULL,
     created_by UUID NOT NULL,
     modified_by UUID NULL
 );
