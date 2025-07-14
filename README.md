@@ -45,6 +45,11 @@ it is advisable to have a separate Domain and Infrastructure for each Feature.
 dailymode-appointment-scheduler/
 ├── frontend/ # React App
 ├── backend/ # Node + GraphQL API
+└── technical-documentation /
+│   └── functional-requirements
+│   └── diagram-database-dailymode-appointment-scheduler.drawio
+│   └── diagram-database-dailymode-appointment-scheduler.png
+│   └── functional-requirements.md
 └── README.md
 
 ## 🧠📂 Backend Folder Structure
