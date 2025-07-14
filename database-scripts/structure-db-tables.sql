@@ -54,8 +54,8 @@ CREATE TABLE users (
     identity_document VARCHAR(50) UNIQUE NOT NULL,
     city_id UUID NOT NULL,
     address TEXT NOT NULL,
-    phone VARCHAR(50) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
+    phone VARCHAR(14) NOT NULL,
+    email VARCHAR(125) UNIQUE NOT NULL,
     user_name VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL, -- A hash of the password must be stored
     status_id INT NOT NULL,
